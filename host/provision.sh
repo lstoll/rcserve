@@ -4,7 +4,7 @@ set -e
 
 apt-get update
 apt-get upgrade
-apt-get install -y dnsmasq node nodejs npm nodejs-legacy
+apt-get install -y dnsmasq
 
 if [ ! -f /usr/bin/docker ]; then
     curl -sSL https://get.docker.com/ | sh
