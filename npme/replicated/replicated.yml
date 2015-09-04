@@ -1,0 +1,355 @@
+replicated_api_version: 1.0.0
+name: npm Enterprise
+version: "[IMAGE_VERSION]"
+release_notes: "remove proxy if not needed, remove reject-unauthorized from config"
+properties:
+  app_url: null
+  logo_url: "https://s3.amazonaws.com/replicated-vendor-assets/66045325f001a1e0ccde2d457cb2b30b/66045325f001a1e0ccde2d457cb2b30b.png"
+  console_title: "npm Enterprise Management Console"
+  bypass_local_registry: false
+admin_commands:
+- alias: update-license
+  command: [sh, /usr/local/bin/npme-update-license.sh]
+  run_type: exec
+  component: npme
+  image:
+    image_name: npme
+    version: '[IMAGE_VERSION]'
+- alias: reset-follower
+  command: [su, -, root, -c, cd /etc/npme;ndm stop policy-follower;rm ./data/sequence;ndm start policy-follower]
+  run_type: exec
+  component: npme
+  image:
+    image_name: npme
+    version: '[IMAGE_VERSION]'
+- alias: add-package
+  command: [npme, add-package]
+  run_type: exec
+  component: npme
+  image:
+    image_name: npme
+    version: '[IMAGE_VERSION]'
+- alias: ssh
+  run_type: exec
+  command: [/bin/bash]
+  component: npme
+  image:
+    image_name: npme
+    version: '[IMAGE_VERSION]'
+state:
+  ready: null
+backup:
+  enabled: "false"
+  init: []
+  run: []
+monitors:
+  cpuacct:
+  - npme,npme
+  memory:
+  - npme,npme
+components:
+- name: npme
+  tags: []
+  conflicts: []
+  cluster: false
+  containers:
+  - source: replicated
+    image_name: npme
+    version: '[IMAGE_VERSION]'
+    privileged: false
+    hostname: ""
+    cmd: ""
+    ephemeral: false
+    cluster: false
+    publish_events:
+    - name: Container npme started
+      trigger: container-start
+      data: ""
+      subscriptions: []
+    config_files:
+    - filename: /usr/local/bin/npme-update-license.sh
+      contents: |-
+        #!/bin/bash
+        echo -n "[?] enter your billing email: "
+        read billing_email
+        echo -n "[?] enter your license key: "
+        read license_key
+
+        http_code=$(curl -s -o /dev/null -w "%{http_code}" -k -X POST --data-urlencode "billing_email=$billing_email" --data-urlencode "license_key=$license_key" ${REPLICATED_INTEGRATIONAPI}/license/v1/sync_with_data)
+
+        if [ $http_code -eq 404 ]; then
+          echo "  license was not found"
+        elif [ $http_code -eq 403 ]; then
+          echo "  license is expired"
+        elif [ $http_code -eq 204 ]; then
+          echo "  license updated \\o/"
+          echo "  restarting npmE..."
+          curl -k -X POST ${REPLICATED_INTEGRATIONAPI}/license/v1/restart
+        else
+          echo "  error updating license"
+        fi
+    - filename: /etc/npme/.license.json
+      contents: |-
+        {{repl LicenseFieldValue "license_json" }}
+    - filename: /etc/npme/service.json
+      contents: |-
+        {
+          "npm-auth-ws": {
+            "module": "@npm/npm-auth-ws",
+            "description": "Global npm user auth WS",
+            "scripts": {
+              "start": "./bin/npm-auth-ws.js"
+            },
+            "env": {},
+            "args": {
+              "start": "",
+              "--port": "5000"
+            }
+          },
+          "policy-follower": {
+            "module": "@npm/policy-follower",
+            "description": "Replicates the npm registry",
+            "scripts": {
+              "start": "./bin/policy-follower.js"
+            },
+            "env": {},
+            "args": {
+              "start": "",
+              "--seq-file": "/etc/npme/data/sequence"
+            }
+          },
+          "validate-and-store": {
+            "module": "@npm/validate-and-store",
+            "description": "Validate and store package tarballs/json",
+            "scripts": {
+              "start": "./bin/validate-and-store.js"
+            },
+            "env": {},
+            "args": {
+              "start": ""
+            }
+          },
+          "registry-frontdoor": {
+            "module": "@npm/registry-frontdoor",
+            "description": "Like npm, only inside your firewall",
+            "scripts": {
+              "start": "./bin/registry-frontdoor.js"
+            },
+            "env": {},
+            "args": {
+              "start": "",
+              "--port": "8080",
+              "--host": "0.0.0.0"
+            }
+          },
+          "package-whitelist": {
+            "module": "@npm/package-whitelist",
+            "description": "Like npm, only inside your firewall",
+            "scripts": {
+              "manage-whitelist": "./bin/package-whitelist.js"
+            }
+          },
+          "env": {},
+          "args": {
+            "--front-door-host": "{{repl ConfigOption "canonical_url" }}",
+            "--white-list-path": "/etc/npme/data/whitelist",
+            "--github-host": {{repl if ConfigOptionEquals "github_type" "github_type_public" }}"https://api.github.com"{{repl else }}"https://{{repl ConfigOption "github_enterprise_host" }}"{{repl end }},
+            "--shared-fetch-secret": "{{repl ConfigOption "secret" }}",
+            "--binary-directory": "/etc/npme/packages",
+            "--auth-fetch": "{{repl if ConfigOptionEquals "authfetch" "authfetch_no" }}false{{repl else }}true{{repl end}}",
+            "--authentication-method": "{{repl ConfigOption "authentication" }}",
+            "--authorization-method": "{{repl ConfigOption "authorization" }}",
+            "--session-handler": "{{repl ConfigOption "session" }}",
+            "--read-through-cache": "{{repl if ConfigOptionEquals "read_through_cache" "read_through_cache_no" }}false{{repl else }}true{{repl end}}",
+            {{repl if ConfigOptionNotEquals "proxy_url" ""}}"--proxy-url": "{{repl ConfigOption "proxy_url" }}",{{repl end}}
+            {{repl if ConfigOptionEquals "reject_unauthorized" "reject_unauthorized_no" }}"--reject-unauthorized": "0",{{repl end}}
+            "--couch-url-remote": "{{repl ConfigOption "couch_url_remote" }}"
+          }
+        }
+    customer_files: []
+    env_vars: []
+    ports:
+    - private_port: "8080"
+      public_port: "8080"
+      port_type: tcp
+      when: ""
+    volumes:
+    - host_path: '{{repl ConfigOption "couchdb_host_path" }}'
+      container_path: /etc/npme/couchdb
+    - host_path: '{{repl ConfigOption "packages_host_path" }}'
+      container_path: /etc/npme/packages
+    - host_path: '{{repl ConfigOption "data_host_path" }}'
+      container_path: /etc/npme/data
+    support_files: []
+    support_commands: []
+cmds:
+- name: secret_random
+  cmd: random
+  args:
+    - "36"
+    - 0-9a-z-
+- name: publicip
+  cmd: publicip
+  args: []
+config:
+- name: General
+  title: "General"
+  description: "Configure your npm Enterprise installation"
+  items:
+  - name: canonical_url
+    title: Full URL of npm Enterprise host
+    type: text
+    value: http://{{repl ConfigOption "publicip" }}:8080
+  - name: publicip
+    type: text
+    hidden: true
+    value_cmd:
+      name: publicip
+      value_at: 0
+  - name: secret
+    title: Secret used between services
+    type: text
+    value_cmd:
+      name: secret_random
+      value_at: 0
+  - name: proxy_url
+    title: Proxy URL
+    type: text
+    required: false
+- name: storage
+  title: Storage
+  description: Configure the location of persistent npm Enterprise storage
+  items:
+  - name: couchdb_host_path
+    description: CouchDb storage path on host
+    type: text
+    default: /usr/local/lib/npme/couchdb
+  - name: packages_host_path
+    description: Package storage path on host
+    type: text
+    default: /usr/local/lib/npme/packages
+  - name: data_host_path
+    description: Miscellaneous data files
+    type: text
+    default: /usr/local/lib/npme/data
+- name: read_through_cache
+  title: Read through cache
+  description: Should missing packages be returned from npmjs.com?
+  items:
+  - name: read_through_cache
+    type: select_one
+    default: read_through_cache_no
+    items:
+    - name: read_through_cache_no
+      title: No
+      type: text
+      affix: left
+      required: false
+    - name: read_through_cache_yes
+      title: Yes
+      type: text
+      affix: right
+      required: false
+- name: reject_unauthorized
+  title: Reject unauthorized
+  description: Should npm on-site apply strict SSL checks?
+  items:
+  - name: reject_unauthorized
+    type: select_one
+    default: reject_unauthorized_yes
+    items:
+    - name: reject_unauthorized_no
+      title: No
+      type: text
+      affix: left
+      required: false
+    - name: reject_unauthorized_yes
+      title: Yes
+      type: text
+      affix: right
+      required: false
+- name: couch_url_remote
+  title: Upstream couchdb
+  description: Which upstream couchdb should we replicate from?
+  items:
+  - name: couch_url_remote
+    type: text
+    default: https://skimdb.npmjs.com/registry
+- name: authentication_plugins
+  title: "Auth plugins"
+  description: "Configure how npm on-site authenticates and authorizes users"
+  items:
+  - name: authorization
+    title: Authorization plugin
+    type: text
+    default: 'github'
+  - name: authentication
+    title: Authentication plugin
+    type: text
+    default: 'github'
+  - name: session
+    title: Session plugin
+    type: text
+    default: 'github'
+- name: authfetch
+  title: Auth reads
+  description: Should npm installs require an token?
+  items:
+  - name: authfetch
+    type: select_one
+    default: authfetch_yes
+    items:
+    - name: authfetch_no
+      title: No
+      type: text
+      affix: left
+      required: false
+    - name: authfetch_yes
+      title: Yes
+      type: text
+      affix: right
+      required: false
+- name: github
+  title: Github integration
+  description: Provide the location of your Github account
+  items:
+  - name: github_type
+    default: github_type_public
+    type: select_one
+    items:
+    - name: github_type_public
+      title: Github.com
+      type: text
+      required: false
+    - name: github_type_enterprise
+      title: Github Enterprise
+      type: text
+      required: false
+  - name: github_enterprise_host
+    title: Github Enterprise Host
+    description: The hostname of your Github Enterprise server
+    recommended: false
+    when: github_type=github_type_enterprise
+    type: text
+    required: true
+  - name: github_enterprise_protocol
+    title: Github Enterprise Host
+    description: The hostname of your Github Enterprise server
+    recommended: false
+    when: github_type=github_type_enterprise
+    type: select_one
+    default: github_enterprise_protocol_https
+    required: true
+    items:
+    - name: github_enterprise_protocol_http
+      title: Insecure (http)
+      description: ""
+      recommended: false
+      type: text
+      required: false
+    - name: github_enterprise_protocol_https
+      title: Secure (https)
+      description: ""
+      recommended: true
+      type: text
+      required: false
