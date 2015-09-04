@@ -55,19 +55,10 @@
   },
   "env": {},
   "args": {
-    "--front-door-host": {
-      "default": "http://127.0.0.1:8080",
-      "description": "full url of front-facing host that npm Enterprise will run on. Include 'http' and ':8080'."
-    },
+    "--front-door-host": "http://rcserve.local:8990",
     "--white-list-path": "/etc/npme/whitelist",
-    "--github-host": {
-      "default": "https://api.github.com",
-      "description": "full url of your Github Enterprise appliance"
-    },
-    "--shared-fetch-secret": {
-      "default": "{{uuid}}",
-      "description": "secret used between internal services (probably leave as is)"
-    },
+    "--github-host": "https://api.github.com",
+    "--shared-fetch-secret": "124b31f2-93af-424c-be41-10ffc4b103b8",
     "--binary-directory": "/etc/npme/packages",
     "--auth-fetch": "true",
     "--authentication-method": "github",
