@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker run --rm -i -r -v /data/npm:/data/npm npmmirror
+docker run --rm -i -v /data/npm:/data/npm npmmirror
