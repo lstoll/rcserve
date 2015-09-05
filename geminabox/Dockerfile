@@ -1,6 +1,6 @@
 FROM ruby:2.2
 
-RUN gem install geminabox thin
+RUN gem install geminabox puma
 
 ADD config.ru /root/config.ru
 
@@ -8,4 +8,4 @@ WORKDIR /root
 
 EXPOSE 8989
 VOLUME /data/rubygems
-CMD ["thin", "start", "p", "8989"]
+CMD ["puma", "--port", "8989", "config.ru"]
