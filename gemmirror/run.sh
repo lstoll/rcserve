@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker run -v /data/rubygems:/data/rubygems gemmirror
+docker run -i --rm -v /data/rubygems:/data/rubygems gemmirror
