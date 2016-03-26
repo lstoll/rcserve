@@ -30,6 +30,46 @@ First time might need to
 
 	ansible-playbook -i 172.16.51.147, site.yml --ask-become-pass
 
+## SSL Certs
+I bought railscamp.net again, and with the magic of letsencrypt we can have real SSL certs. yay!
+
+make sure to `bundle` in the `sslcerts/` dir. Gen keys for r53, use IAM like
+
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "route53:ChangeResourceRecordSets"
+            ],
+            "Resource": "arn:aws:route53:::hostedzone/Z1R52O69UE27J7"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "route53:GetChange"
+            ],
+            "Resource": "arn:aws:route53:::change/*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "route53:ListHostedZones",
+                "route53:ListHostedZonesByName"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
+
+
+The run this mad command
+
+    AWS_ACCESS_KEY_ID=XXXX AWS_SECRET_ACCESS_KEY=XXXX bundle exec ./letsencrypt.sh -c -k ./route53-hook.rb -t dns-01
+
 ### Legacy:
 A bunch of stuff janked together to get offline love at RC-us-west
 
