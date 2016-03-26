@@ -1,0 +1,87 @@
+---
+- hosts: all
+  become: true
+  become_user: root
+  tasks:
+  - name: One apt update to rule them all
+    apt: update_cache=yes cache_valid_time=3600
+  - name: Install required packages
+    apt: name={{item}} state=present
+    with_items:
+       - postgresql
+       - python-psycopg2
+       - nginx
+       - git-core
+       - build-essential
+       - ruby-dev
+       - nodejs
+       - nodejs-legacy
+  # Service users
+  - user: name={{item}} system=yes home=/srv/{{item}} createhome=yes
+    with_items:
+      - gogs
+      - gwiki
+      - mattermost
+
+  # Databass
+  - postgresql_db: name={{item}}
+    become_user: postgres
+    with_items:
+      - gogs
+      - mattermost
+      - gwiki
+  - postgresql_user: db={{item}} name={{item}} password={{item}}pw encrypted=no priv=ALL
+    become_user: postgres
+    with_items:
+      - gogs
+      - mattermost
+      - gwiki
+
+  # Go, because it's 'rails'camp
+  - name: Install golang
+    command: bash -c "curl https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz | tar -C /usr/local -xz" creates=/usr/local/go/bin/go
+  - name: Set up go paths
+    copy:
+      content: "export GOPATH=/srv/go\nexport PATH=$GOPATH/bin:/usr/local/go/bin:$PATH"
+      dest: /etc/profile.d/go.sh
+
+  # Gogs
+  - git: repo=https://github.com/gogits/gogs dest=/srv/go/src/github.com/gogits/gogs update=no version=master
+  # Wiki
+  - git: repo=https://github.com/aspic/g-wiki dest=/srv/go/src/github.com/aspic/g-wiki update=no version=master
+
+  # Go install to compile/fetch deps/that shit.
+  - name: Go install things
+    command: sh -l -c "/usr/local/go/bin/go get ./... && /usr/local/go/bin/go build ./... && /usr/local/go/bin/go install ./..." chdir={{item}}
+    with_items:
+      - /srv/go/src/github.com/gogits/gogs
+      - /srv/go/src/github.com/aspic/g-wiki
+
+  # Gogs setup
+  - name: Run make for gogs
+    command: sh -l -c "make" chdir=/srv/go/src/github.com/gogits/gogs
+  - name: Gogs config file
+    template: src=templates/gogs.ini dest=/srv/go/src/github.com/gogits/gogs/custom/conf/app.ini mode=0644
+  - name: Gogs systemd unit
+    template: src=templates/gogs.service dest=/etc/systemd/system/gogs.service
+    register: gogs_systemd
+
+
+  # Reload systemd units
+  - name: notify systemd of service changes
+    command: systemctl daemon-reload
+    when: gogs_systemd.changed == True
+
+
+  # Start up all the services
+  - name: start gogs and set to start on startup
+    service: name=gogs state=started enabled=yes
+
+
+
+  # Clone the 3 projects
+  # Build the 3 projects
+  # Copy binaries
+  # Write systemd units
+  # create databases
+  # create FS paths
