@@ -58,9 +58,14 @@
     command: sh -l -c "make" chdir=/srv/go/src/github.com/gogits/gogs
   - name: Gogs config file
     template: src=templates/gogs.ini dest=/srv/go/src/github.com/gogits/gogs/custom/conf/app.ini mode=0644
+    notify:
+      - restart gogs
   - name: Gogs systemd unit
     template: src=templates/gogs.service dest=/etc/systemd/system/gogs.service
     register: gogs_systemd
+    notify:
+      - restart gogs
+
 
   # Mattermost setup
   - name: Download Mattermost
@@ -71,23 +76,33 @@
     file: path=/srv/mattermost/data state=directory mode=0755 owner=mattermost
   - name: Mattermost config file
     template: src=templates/mattermost.config.json dest=/srv/mattermost/mattermost/config/config.json mode=0644
+    notify:
+      - restart mattermost
   - name: Mattermost systemd unit
     template: src=templates/mattermost.service dest=/etc/systemd/system/mattermost.service
     register: mattermost_systemd
+    notify:
+      - restart mattermost
 
   # Geminabox
   - name: Geminabox Gemfile
     template: src=templates/geminabox.Gemfile dest=/srv/geminabox/Gemfile
   - name: Geminabox rackup
     template: src=templates/geminabox.config.ru dest=/srv/geminabox/config.ru
+    notify:
+      - restart geminabox
   - name: create geminabox data dir
     file: path=/srv/geminabox/data state=directory mode=0755 owner=geminabox
   - name: Bootstrap Geminabox
     command: bundle install --path vendor/bundle chdir=/srv/geminabox creates=/srv/geminabox/Gemfile.lock
     become_user: geminabox
+    notify:
+      - restart geminabox
   - name: Geminabox systemd unit
     template: src=templates/geminabox.service dest=/etc/systemd/system/geminabox.service
     register: geminabox_systemd
+    notify:
+      - restart geminabox
 
 
 
@@ -106,6 +121,16 @@
     service: name=mattermost state=started enabled=yes
   - name: start geminabox and set to start on startup
     service: name=geminabox state=started enabled=yes
+
+
+  handlers:
+    - name: restart gogs
+      service: name=gogs state=restarted
+    - name: restart mattermost
+      service: name=mattermost state=restarted
+    - name: restart geminabox
+      service: name=geminabox state=restarted
+
 
 
 
