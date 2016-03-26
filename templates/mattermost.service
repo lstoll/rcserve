@@ -1,0 +1,16 @@
+[Unit]
+Description=Mattermost
+After=syslog.target
+After=network.target
+After=postgresql.service
+
+[Service]
+Type=simple
+User=mattermost
+WorkingDirectory=/srv/mattermost/mattermost/bin
+ExecStart=/srv/mattermost/mattermost/bin/platform
+Restart=always
+Environment=USER=mattermost HOME=/srv/mattermost
+
+[Install]
+WantedBy=multi-user.target

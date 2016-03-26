@@ -20,7 +20,6 @@
   - user: name={{item}} system=yes home=/srv/{{item}} createhome=yes
     with_items:
       - gogs
-      - gwiki
       - mattermost
 
   # Databass
@@ -29,13 +28,11 @@
     with_items:
       - gogs
       - mattermost
-      - gwiki
   - postgresql_user: db={{item}} name={{item}} password={{item}}pw encrypted=no priv=ALL
     become_user: postgres
     with_items:
       - gogs
       - mattermost
-      - gwiki
 
   # Go, because it's 'rails'camp
   - name: Install golang
@@ -47,15 +44,12 @@
 
   # Gogs
   - git: repo=https://github.com/gogits/gogs dest=/srv/go/src/github.com/gogits/gogs update=no version=master
-  # Wiki
-  - git: repo=https://github.com/aspic/g-wiki dest=/srv/go/src/github.com/aspic/g-wiki update=no version=master
 
   # Go install to compile/fetch deps/that shit.
   - name: Go install things
     command: sh -l -c "/usr/local/go/bin/go get ./... && /usr/local/go/bin/go build ./... && /usr/local/go/bin/go install ./..." chdir={{item}}
     with_items:
       - /srv/go/src/github.com/gogits/gogs
-      - /srv/go/src/github.com/aspic/g-wiki
 
   # Gogs setup
   - name: Run make for gogs
@@ -66,17 +60,31 @@
     template: src=templates/gogs.service dest=/etc/systemd/system/gogs.service
     register: gogs_systemd
 
+  # Mattermost setup
+  - name: Download Mattermost
+    get_url: url=https://releases.mattermost.com/2.1.0/mattermost-team-2.1.0-linux-amd64.tar.gz dest=/srv/mattermost/mattermost.tar.gz mode=0444
+  - name: Extract mattermost
+    unarchive: src=/srv/mattermost/mattermost.tar.gz dest=/srv/mattermost copy=no owner=mattermost creates=/srv/mattermost/bin/platform
+  - name: create mattermost data dir
+    file: path=/srv/mattermost/data state=directory mode=0755 owner=mattermost
+  - name: Mattermost config file
+    template: src=templates/mattermost.config.json dest=/srv/mattermost/mattermost/config/config.json mode=0644
+  - name: Mattermost systemd unit
+    template: src=templates/mattermost.service dest=/etc/systemd/system/mattermost.service
+    register: mattermost_systemd
+
 
   # Reload systemd units
   - name: notify systemd of service changes
     command: systemctl daemon-reload
-    when: gogs_systemd.changed == True
+    when: (gogs_systemd.changed == True) or (mattermost_systemd.changed == True)
 
 
   # Start up all the services
   - name: start gogs and set to start on startup
     service: name=gogs state=started enabled=yes
-
+  - name: start mattermost and set to start on startup
+    service: name=mattermost state=started enabled=yes
 
 
   # Clone the 3 projects
