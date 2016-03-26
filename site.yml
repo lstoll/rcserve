@@ -16,11 +16,13 @@
        - ruby-dev
        - nodejs
        - nodejs-legacy
+       - bundler
   # Service users
   - user: name={{item}} system=yes home=/srv/{{item}} createhome=yes
     with_items:
       - gogs
       - mattermost
+      - geminabox
 
   # Databass
   - postgresql_db: name={{item}}
@@ -73,18 +75,38 @@
     template: src=templates/mattermost.service dest=/etc/systemd/system/mattermost.service
     register: mattermost_systemd
 
+  # Geminabox
+  - name: Geminabox Gemfile
+    template: src=templates/geminabox.Gemfile dest=/srv/geminabox/Gemfile
+  - name: Geminabox rackup
+    template: src=templates/geminabox.config.ru dest=/srv/geminabox/config.ru
+  - name: create geminabox data dir
+    file: path=/srv/geminabox/data state=directory mode=0755 owner=geminabox
+  - name: Bootstrap Geminabox
+    command: bundle install --path vendor/bundle chdir=/srv/geminabox creates=/srv/geminabox/Gemfile.lock
+    become_user: geminabox
+  - name: Geminabox systemd unit
+    template: src=templates/geminabox.service dest=/etc/systemd/system/geminabox.service
+    register: geminabox_systemd
+
+
+
 
   # Reload systemd units
   - name: notify systemd of service changes
     command: systemctl daemon-reload
-    when: (gogs_systemd.changed == True) or (mattermost_systemd.changed == True)
-
+    when: (gogs_systemd.changed == True) or
+          (mattermost_systemd.changed == True) or
+          (geminabox_systemd.changed == true)
 
   # Start up all the services
   - name: start gogs and set to start on startup
     service: name=gogs state=started enabled=yes
   - name: start mattermost and set to start on startup
     service: name=mattermost state=started enabled=yes
+  - name: start geminabox and set to start on startup
+    service: name=geminabox state=started enabled=yes
+
 
 
   # Clone the 3 projects

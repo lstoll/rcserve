@@ -1,0 +1,15 @@
+[Unit]
+Description=Geminabox
+After=syslog.target
+After=network.target
+
+[Service]
+Type=simple
+User=geminabox
+WorkingDirectory=/srv/geminabox
+ExecStart=/usr/bin/bundle exec rackup -o 0.0.0.0 -p 9295
+Restart=always
+Environment=USER=geminabox HOME=/srv/geminabox
+
+[Install]
+WantedBy=multi-user.target
