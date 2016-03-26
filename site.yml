@@ -103,8 +103,7 @@
     notify:
       - restart geminabox
 
-
-  # Webserver
+  # Webserver basics
   - name: ssl priv key
     copy: src=sslcerts/certs/railscamp.net/privkey.pem dest=/etc/ssl/railscamp.key owner=root group=root mode=0600
     notify: restart nginx
@@ -114,10 +113,6 @@
   - name: nginx config
     template: src=templates/nginx.conf dest=/etc/nginx/nginx.conf
     notify: restart nginx
-
-
-
-
 
   # Reload systemd units
   - name: notify systemd of service changes
@@ -134,7 +129,6 @@
   - name: start geminabox and set to start on startup
     service: name=geminabox state=started enabled=yes
 
-
   handlers:
     - name: restart gogs
       service: name=gogs state=restarted
@@ -144,15 +138,3 @@
       service: name=geminabox state=restarted
     - name: restart nginx
       service: name=nginx state=restarted
-
-
-
-
-
-
-  # Clone the 3 projects
-  # Build the 3 projects
-  # Copy binaries
-  # Write systemd units
-  # create databases
-  # create FS paths
