@@ -113,6 +113,14 @@
   - name: nginx config
     template: src=templates/nginx.conf dest=/etc/nginx/nginx.conf
     notify: restart nginx
+    vars:
+      proxy_services:
+        - name: git.railscamp.net
+          port: 3005
+        - name: chat.railscamp.net
+          port: 8065
+        - name: gems.railscamp.net
+          port: 9295
 
   # Reload systemd units
   - name: notify systemd of service changes

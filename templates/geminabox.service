@@ -7,7 +7,7 @@ After=network.target
 Type=simple
 User=geminabox
 WorkingDirectory=/srv/geminabox
-ExecStart=/usr/bin/bundle exec rackup -o 0.0.0.0 -p 9295
+ExecStart=/usr/bin/bundle exec rackup -o 127.0.0.1 -p 9295
 Restart=always
 Environment=USER=geminabox HOME=/srv/geminabox
 
