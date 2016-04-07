@@ -103,6 +103,18 @@
     notify:
       - restart geminabox
 
+  # Gem mirroring setup
+  - name: Gem mirror code
+    git: repo=https://github.com/lstoll/rubygems-mirror dest=/srv/geminabox/mirrorer update=yes version=railscamp
+    become_user: geminabox
+  - name: Bootstrap rubygems-mirror
+    command: bundle install --path vendor/bundle chdir=/srv/geminabox/mirrorer
+    become_user: geminabox
+  - name: create geminabox .gem dir
+    file: path=/srv/geminabox/.gem state=directory mode=0755 owner=geminabox
+  - name: Gem mirroring config
+    template: src=templates/rubygems-mirror-config.yaml dest=/srv/geminabox/.gem/.mirrorrc
+
   # Webserver basics
   - name: ssl priv key
     copy: src=sslcerts/certs/railscamp.net/privkey.pem dest=/etc/ssl/railscamp.key owner=root group=root mode=0600
