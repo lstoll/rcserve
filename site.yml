@@ -105,10 +105,12 @@
 
   # Gem mirroring setup
   - name: Gem mirror code
-    git: repo=https://github.com/lstoll/rubygems-mirror dest=/srv/geminabox/mirrorer update=yes version=railscamp
+    git: repo=https://github.com/rubygems/rubygems-mirror dest=/srv/geminabox/mirrorer update=no version=master
     become_user: geminabox
+  - name: gem-mirror Gemfile
+    template: src=templates/gemmirror.Gemfile dest=/srv/geminabox/mirrorer/Gemfile
   - name: Bootstrap rubygems-mirror
-    command: bundle install --path vendor/bundle chdir=/srv/geminabox/mirrorer
+    command: bundle install --path vendor/bundle chdir=/srv/geminabox/mirrorer creates=/srv/geminabox/mirrorer/Gemfile.lock
     become_user: geminabox
   - name: create geminabox .gem dir
     file: path=/srv/geminabox/.gem state=directory mode=0755 owner=geminabox

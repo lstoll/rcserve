@@ -2,9 +2,6 @@
 - from: https://rubygems.org
   to: /data/gems
   parallelism: 10
-  retries: 3
+  retries: 5
   delete: false
   skiperror: true
-  maxage: 730
-  minversions: 10
-  verbose: true
