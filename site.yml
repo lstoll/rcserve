@@ -70,7 +70,7 @@
   - name: Download Mattermost
     get_url: url=https://releases.mattermost.com/2.1.0/mattermost-team-2.1.0-linux-amd64.tar.gz dest=/srv/mattermost/mattermost.tar.gz mode=0444
   - name: Extract mattermost
-    unarchive: src=/srv/mattermost/mattermost.tar.gz dest=/srv/mattermost copy=no owner=mattermost creates=/srv/mattermost/bin/platform
+    unarchive: src=/srv/mattermost/mattermost.tar.gz dest=/srv/mattermost copy=no owner=mattermost creates=/srv/mattermost/mattermost/bin/platform
   - name: create mattermost data dir
     file: path=/srv/mattermost/data state=directory mode=0755 owner=mattermost
   - name: Mattermost config file
