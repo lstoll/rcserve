@@ -17,6 +17,7 @@
        - nodejs
        - nodejs-legacy
        - bundler
+       - apt-cacher-ng
   # Service users
   - user: name={{item}} system=yes home=/srv/{{item}} createhome=yes
     with_items:
@@ -117,6 +118,13 @@
   - name: Gem mirroring config
     template: src=templates/rubygems-mirror-config.yaml dest=/srv/geminabox/.gem/.mirrorrc
 
+  # Apt cacher
+  - name: create apt cache dir
+    file: path=/data/apt-cache state=directory mode=0755 owner=apt-cacher-ng
+  - name: apt-cacher config
+    template: src=templates/acng.conf dest=/etc/apt-cacher-ng/acng.conf
+    notify: restart apt-cacher-ng
+
   # Webserver
   - name: nginx cache dir
     file: path=/data/nginx/cache state=directory mode=0755 owner=www-data
@@ -137,6 +145,8 @@
           port: 8065
         - name: gems.railscamp.net
           port: 9295
+        - name: apt.railscamp.net
+          port: 4132
       cdn_services:
         - name: brewbottles.railscamp.net
           upstream: https://homebrew.bintray.com
@@ -166,3 +176,5 @@
       service: name=geminabox state=restarted
     - name: restart nginx
       service: name=nginx state=restarted
+    - name: restart apt-cacher-ng
+      service: name=apt-cacher-ng state=restarted
