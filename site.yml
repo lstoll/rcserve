@@ -18,6 +18,7 @@
        - nodejs-legacy
        - bundler
        - apt-cacher-ng
+       - dnsmasq
   # Service users
   - user: name={{item}} system=yes home=/srv/{{item}} createhome=yes
     with_items:
