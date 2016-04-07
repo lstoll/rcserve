@@ -117,7 +117,9 @@
   - name: Gem mirroring config
     template: src=templates/rubygems-mirror-config.yaml dest=/srv/geminabox/.gem/.mirrorrc
 
-  # Webserver basics
+  # Webserver
+  - name: nginx cache dir
+    file: path=/data/nginx/cache state=directory mode=0755 owner=www-data
   - name: ssl priv key
     copy: src=sslcerts/certs/railscamp.net/privkey.pem dest=/etc/ssl/railscamp.key owner=root group=root mode=0600
     notify: restart nginx
@@ -135,6 +137,10 @@
           port: 8065
         - name: gems.railscamp.net
           port: 9295
+      cdn_services:
+        - name: brewbottles.railscamp.net
+          upstream: https://homebrew.bintray.com
+          upstream_host: homebrew.bintray.com
 
   # Reload systemd units
   - name: notify systemd of service changes
