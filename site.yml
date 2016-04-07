@@ -91,7 +91,7 @@
     notify:
       - restart geminabox
   - name: create geminabox data dir
-    file: path=/srv/geminabox/data state=directory mode=0755 owner=geminabox
+    file: path=/data/gems state=directory mode=0755 owner=geminabox
   - name: Bootstrap Geminabox
     command: bundle install --path vendor/bundle chdir=/srv/geminabox creates=/srv/geminabox/Gemfile.lock
     become_user: geminabox
