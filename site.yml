@@ -19,6 +19,7 @@
        - bundler
        - apt-cacher-ng
        - dnsmasq
+       - rssh
   # Service users
   - user: name={{item}} system=yes home=/srv/{{item}} createhome=yes
     with_items:
@@ -152,6 +153,13 @@
         - name: brewbottles.railscamp.net
           upstream: https://homebrew.bintray.com
           upstream_host: homebrew.bintray.com
+
+
+  # Static photos site
+  - template: src=templates/rssh.conf dest=/etc/rssh.conf
+  # password is: passw0rd
+  - user: name=photos home=/data/photos createhome=yes password=$6$LxH5OWrk2CnWqZCQ$f2WW6kXtDEnbu1qIP3J8ATGjVjeY5Tpd8s4I6XZUNOKUGEUEVO9Nq9zVo8loZPLHSCM6sVS3lo2nPTmjA/6bj0 shell=/usr/bin/rssh
+  - file: path=/data/photos/public_html state=directory mode=0755 owner=photos group=www-data
 
   # Reload systemd units
   - name: notify systemd of service changes
