@@ -1,1 +1,1 @@
-railscamp.net www.railscamp.net git.railscamp.net chat.railscamp.net gems.railscamp.net apt.railscamp.net brewbottles.railscamp.net photos.railscamp.net
+railscamp.net www.railscamp.net git.railscamp.net chat.railscamp.net gems.railscamp.net apt.railscamp.net brewbottles.railscamp.net photos.railscamp.net npm.railscamp.net
