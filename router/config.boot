@@ -1,41 +1,91 @@
 interfaces {
     ethernet eth0 {
-        address dhcp
-        description wan
         duplex auto
         speed auto
     }
     ethernet eth1 {
-        address 172.16.71.1/24
-        description server
         duplex auto
         speed auto
     }
     ethernet eth2 {
-        address 172.16.72.1/24
-        description internet
+        address 10.29.64.2/20
+        description upstream
         duplex auto
         speed auto
+        traffic-policy {
+            out UPLOAD-POLICY
+        }
     }
     ethernet eth3 {
-        address 172.16.73.1/24
-        description no-internet
         duplex auto
         speed auto
     }
     ethernet eth4 {
+        address 192.168.0.1/24
         duplex auto
         speed auto
     }
     loopback lo {
     }
     switch switch0 {
+        address 172.16.51.254/24
         mtu 1500
+        switch-port {
+            interface eth0
+            interface eth1
+            interface eth3
+        }
+        traffic-policy {
+            out DOWNLOAD-POLICY
+        }
     }
 }
 service {
+    dhcp-server {
+        disabled false
+        hostfile-update disable
+        shared-network-name railscamp {
+            authoritative enable
+            description Railscamp
+            subnet 172.16.51.0/24 {
+                default-router 172.16.51.254
+                dns-server 172.16.51.254
+                domain-name railscamp.net
+                lease 86400
+                start 172.16.51.20 {
+                    stop 172.16.51.220
+                }
+                static-mapping lhardy-laptop {
+                    ip-address 172.16.51.242
+                    mac-address ac:bc:32:c7:f7:5d
+                }
+                static-mapping lstoll-laptop {
+                    ip-address 172.16.51.240
+                    mac-address a4:5e:60:f0:29:37
+                }
+                static-mapping sonos {
+                    ip-address 172.16.51.241
+                    mac-address 5c:aa:fd:0b:72:a4
+                }
+            }
+        }
+    }
+    dns {
+        forwarding {
+            cache-size 2000
+            listen-on switch0
+            name-server 8.8.8.8
+            name-server 8.8.4.4
+        }
+    }
     gui {
         https-port 443
+    }
+    nat {
+        rule 5010 {
+            outbound-interface eth2
+            type masquerade
+        }
     }
     ssh {
         port 22
@@ -43,6 +93,10 @@ service {
     }
 }
 system {
+    config-management {
+        commit-revisions 50
+    }
+    gateway-address 10.29.64.1
     host-name ubnt
     login {
         user lstoll {
@@ -68,6 +122,38 @@ system {
         server 3.ubnt.pool.ntp.org {
         }
     }
+    static-host-mapping {
+        host-name apt.railscamp.net {
+            inet 172.16.51.250
+        }
+        host-name brewbottles.railscamp.net {
+            inet 172.16.51.250
+        }
+        host-name chat.railscamp.net {
+            inet 172.16.51.250
+        }
+        host-name gems.railscamp.net {
+            inet 172.16.51.250
+        }
+        host-name git.railscamp.net {
+            inet 172.16.51.250
+        }
+        host-name npm.railscamp.net {
+            inet 172.16.51.250
+        }
+        host-name photos.railscamp.net {
+            inet 172.16.51.250
+        }
+        host-name railscamp.net {
+            inet 172.16.51.250
+        }
+        host-name rcserve.railscamp.net {
+            inet 172.16.51.250
+        }
+        host-name www.railscamp.net {
+            inet 172.16.51.250
+        }
+    }
     syslog {
         global {
             facility all {
@@ -80,8 +166,98 @@ system {
     }
     time-zone UTC
 }
+traffic-policy {
+    shaper DOWNLOAD-POLICY {
+        bandwidth 20Mbit
+        class 5 {
+            bandwidth 80%
+            burst 15k
+            ceiling 100%
+            match server {
+                ip {
+                    destination {
+                        address 172.16.51.250/32
+                    }
+                }
+            }
+            priority 2
+            queue-type fair-queue
+        }
+        class 10 {
+            bandwidth 25%
+            burst 15k
+            ceiling 75%
+            match lhardy-laptop {
+                ip {
+                    destination {
+                        address 172.16.51.242/32
+                    }
+                }
+            }
+            match lstoll-laptop {
+                ip {
+                    destination {
+                        address 172.16.51.240/32
+                    }
+                }
+            }
+            match sonos {
+                ip {
+                    destination {
+                        address 172.16.51.241/32
+                    }
+                }
+            }
+            priority 4
+            queue-type fair-queue
+        }
+        default {
+            bandwidth 128Kbit
+            burst 15k
+            ceiling 192Kbit
+            queue-type fair-queue
+        }
+    }
+    shaper UPLOAD-POLICY {
+        bandwidth 3Mbit
+        class 5 {
+            bandwidth 80%
+            burst 15k
+            ceiling 100%
+            match server {
+                ip {
+                    source {
+                        address 172.16.51.250/32
+                    }
+                }
+            }
+            priority 2
+            queue-type fair-queue
+        }
+        class 10 {
+            bandwidth 25%
+            burst 15k
+            ceiling 75%
+            match server {
+                ip {
+                    source {
+                        address 172.16.51.143/32
+                    }
+                }
+            }
+            priority 4
+            queue-type fair-queue
+        }
+        default {
+            bandwidth 128Kbit
+            burst 15k
+            ceiling 192Kbit
+            queue-type fair-queue
+        }
+    }
+}
 
 
 /* Warning: Do not remove the following line. */
-/* === vyatta-config-version: "config-management@1:conntrack@1:cron@1:dhcp-relay@1:dhcp-server@4:firewall@5:ipsec@4:nat@3:qos@1:quagga@2:system@4:ubnt-pptp@1:ubnt-util@1:vrrp@1:webgui@1:webproxy@1:zone-policy@1" === */
-/* Release version: v1.6.6.4749363.150224.1217 */
+/* === vyatta-config-version: "config-management@1:conntrack@1:cron@1:dhcp-relay@1:dhcp-server@4:firewall@5:ipsec@5:nat@3:qos@1:quagga@2:system@4:ubnt-pptp@1:ubnt-util@1:vrrp@1:webgui@1:webproxy@1:zone-policy@1" === */
+/* Release version: v1.8.0.4853089.160219.1607 */
