@@ -55,6 +55,14 @@ service {
                 start 172.16.51.20 {
                     stop 172.16.51.220
                 }
+                static-mapping chex-laptop {
+                    ip-address 172.16.51.245
+                    mac-address 60:f8:1d:b9:17:dc
+                }
+                static-mapping cole-phone {
+                    ip-address 172.16.51.243
+                    mac-address 00:ee:bd:b4:65:15
+                }
                 static-mapping lhardy-laptop {
                     ip-address 172.16.51.242
                     mac-address ac:bc:32:c7:f7:5d
@@ -62,6 +70,10 @@ service {
                 static-mapping lstoll-laptop {
                     ip-address 172.16.51.240
                     mac-address a4:5e:60:f0:29:37
+                }
+                static-mapping lstoll-phone {
+                    ip-address 172.16.51.244
+                    mac-address 90:fd:61:df:49:13
                 }
                 static-mapping sonos {
                     ip-address 172.16.51.241
@@ -168,11 +180,11 @@ system {
 }
 traffic-policy {
     shaper DOWNLOAD-POLICY {
-        bandwidth 20Mbit
+        bandwidth 40Mbit
         class 5 {
-            bandwidth 80%
+            bandwidth 50%
             burst 15k
-            ceiling 100%
+            ceiling 75%
             match server {
                 ip {
                     destination {
@@ -187,6 +199,13 @@ traffic-policy {
             bandwidth 25%
             burst 15k
             ceiling 75%
+            match cole-phone {
+                ip {
+                    destination {
+                        address 172.16.51.243/32
+                    }
+                }
+            }
             match lhardy-laptop {
                 ip {
                     destination {
@@ -211,19 +230,44 @@ traffic-policy {
             priority 4
             queue-type fair-queue
         }
+        class 50 {
+            bandwidth 5%
+            burst 2.5k
+            match ICMP {
+                ip {
+                    protocol icmp
+                }
+            }
+            priority 3
+            queue-type fair-queue
+        }
+        class 60 {
+            bandwidth 5%
+            burst 2.5K
+            match ssh {
+                ip {
+                    destination {
+                        port 22
+                    }
+                    dscp lowdelay
+                    protocol tcp
+                }
+            }
+            queue-type fair-queue
+        }
         default {
-            bandwidth 128Kbit
+            bandwidth 1Mbit
             burst 15k
-            ceiling 192Kbit
+            ceiling 2Mbit
             queue-type fair-queue
         }
     }
     shaper UPLOAD-POLICY {
-        bandwidth 3Mbit
+        bandwidth 4Mbit
         class 5 {
-            bandwidth 80%
+            bandwidth 50%
             burst 15k
-            ceiling 100%
+            ceiling 75%
             match server {
                 ip {
                     source {
@@ -234,24 +278,10 @@ traffic-policy {
             priority 2
             queue-type fair-queue
         }
-        class 10 {
-            bandwidth 25%
-            burst 15k
-            ceiling 75%
-            match server {
-                ip {
-                    source {
-                        address 172.16.51.143/32
-                    }
-                }
-            }
-            priority 4
-            queue-type fair-queue
-        }
         default {
-            bandwidth 128Kbit
+            bandwidth 256Kbit
             burst 15k
-            ceiling 192Kbit
+            ceiling 384Kbit
             queue-type fair-queue
         }
     }
