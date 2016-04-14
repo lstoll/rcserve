@@ -256,9 +256,9 @@ traffic-policy {
             queue-type fair-queue
         }
         default {
-            bandwidth 1Mbit
+            bandwidth 5%
             burst 15k
-            ceiling 2Mbit
+            ceiling 75%
             queue-type fair-queue
         }
     }
@@ -279,9 +279,9 @@ traffic-policy {
             queue-type fair-queue
         }
         default {
-            bandwidth 256Kbit
+            bandwidth 5%
             burst 15k
-            ceiling 384Kbit
+            ceiling 75%
             queue-type fair-queue
         }
     }
