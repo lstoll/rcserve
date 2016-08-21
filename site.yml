@@ -71,9 +71,9 @@
 
   # Mattermost setup
   - name: Download Mattermost
-    get_url: url=https://releases.mattermost.com/2.1.0/mattermost-team-2.1.0-linux-amd64.tar.gz dest=/srv/mattermost/mattermost.tar.gz mode=0444
+    get_url: url=https://releases.mattermost.com/3.3.0/mattermost-team-3.3.0-linux-amd64.tar.gz dest=/srv/mattermost/mattermost-3.3.0.tar.gz mode=0444
   - name: Extract mattermost
-    unarchive: src=/srv/mattermost/mattermost.tar.gz dest=/srv/mattermost copy=no owner=mattermost creates=/srv/mattermost/mattermost/bin/platform
+    unarchive: src=/srv/mattermost/mattermost-3.3.0.tar.gz dest=/srv/mattermost copy=no owner=mattermost creates=/srv/mattermost/mattermost/bin/platform
   - name: create mattermost data dir
     file: path=/srv/mattermost/data state=directory mode=0755 owner=mattermost
   - name: Mattermost config file
@@ -160,6 +160,21 @@
   # password is: passw0rd
   - user: name=photos home=/data/photos createhome=yes password=$6$LxH5OWrk2CnWqZCQ$f2WW6kXtDEnbu1qIP3J8ATGjVjeY5Tpd8s4I6XZUNOKUGEUEVO9Nq9zVo8loZPLHSCM6sVS3lo2nPTmjA/6bj0 shell=/usr/bin/rssh
   - file: path=/data/photos/public_html state=directory mode=0755 owner=photos group=www-data
+
+  # DNS Entries for dnsmasq
+  - name: dnsmasq dns entries
+    lineinfile: dest=/etc/hosts regexp='{{item.name}}' line='{{item.ip}} {{item.name}}' owner=root group=root mode=0644
+    with_items:
+      - { name: "apt.railscamp.net", ip: "172.16.51.250" }
+      - { name: "brewbottles.railscamp.net", ip: "172.16.51.250" }
+      - { name: "chat.railscamp.net", ip: "172.16.51.250" }
+      - { name: "gems.railscamp.net", ip: "172.16.51.250" }
+      - { name: "git.railscamp.net", ip: "172.16.51.250" }
+      - { name: "npm.railscamp.net", ip: "172.16.51.250" }
+      - { name: "photos.railscamp.net", ip: "172.16.51.250" }
+      - { name: "railscamp.net", ip: "172.16.51.250" }
+      - { name: "rcserve.railscamp.net", ip: "172.16.51.250" }
+      - { name: "www.railscamp.net", ip: "172.16.51.250" }
 
   # Reload systemd units
   - name: notify systemd of service changes

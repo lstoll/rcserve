@@ -24,11 +24,33 @@ Things to make available
 
 Run ansible
 
-    ansible-playbook -i 172.16.51.147, site.yml
+    ansible-playbook -i 172.16.51.250, site.yml
 
 First time might need to
 
-	ansible-playbook -i 172.16.51.147, site.yml --ask-become-pass
+	ansible-playbook -i 172.16.51.250, site.yml --ask-become-pass
+
+## Updating gems
+
+    sudo su - geminabox
+    cd mirrorer
+    bundle exec rake mirror:update
+
+## Mattermost setup
+
+    sudo su - mattermost
+    cd mattermost
+    vim config/config.json
+    <change "EnableTeamCreation" to true.>
+    ./bin/platform -create_team -team_name="railscamp" -email="admin@railscamp.net"
+    ./bin/platform -create_user -team_name="railscamp" -email="admin@railscamp.net" -password="mypassword"
+    ./bin/platform -assign_role -team_name="railscamp" -email="admin@railscamp.net" -role="system_admin"
+    vim config/config.json
+    <change "EnableTeamCreation" to false.>
+    exit
+    sudo service mattermost restart
+
+Go to https://chat.railscamp.net/
 
 ## SSL Certs
 I bought railscamp.net again, and with the magic of letsencrypt we can have real SSL certs. yay!

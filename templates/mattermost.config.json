@@ -19,10 +19,12 @@
         "SessionLengthWebInDays": 30,
         "SessionLengthMobileInDays": 30,
         "SessionLengthSSOInDays": 30,
-        "SessionCacheInMinutes": 10
+        "SessionCacheInMinutes": 10,
+        "SiteURL": "https://chat.railscamp.net"
     },
     "TeamSettings": {
         "SiteName": "Mattermost",
+        "EnableOpenServer": true,
         "MaxUsersPerTeam": 500,
         "EnableTeamCreation": false,
         "EnableUserCreation": true,
