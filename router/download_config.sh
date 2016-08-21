@@ -1,3 +1,3 @@
 #!/bin/bash
 
-scp lstoll@172.16.51.254:/config/config.boot .
+scp lstoll@192.168.0.1:/config/config.boot .
