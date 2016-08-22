@@ -50,7 +50,7 @@ First time might need to
     exit
     sudo service mattermost restart
 
-Go to https://chat.railscamp.net/
+Go to https://chat.railscamp.net/ . Log in, open team. Edit team settings, set "Allow any user with an account on this server to join this team" to yes.
 
 ## SSL Certs
 I bought railscamp.net again, and with the magic of letsencrypt we can have real SSL certs. yay!
