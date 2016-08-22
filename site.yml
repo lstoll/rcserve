@@ -149,10 +149,10 @@
           port: 9295
         - name: apt.railscamp.net
           port: 4132
-      cdn_services:
-        - name: brewbottles.railscamp.net
-          upstream: https://homebrew.bintray.com
-          upstream_host: homebrew.bintray.com
+      # cdn_services:
+      #   - name: brewbottles.railscamp.net
+      #     upstream: https://homebrew.bintray.com
+      #     upstream_host: homebrew.bintray.com
 
 
   # Static photos site
